@@ -1,25 +1,27 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
-const hre = require("hardhat");
+const hre = require('hardhat');
+const { utils } = require('ethers');
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const baseTokenURI = 'ipfs://QmZbWNKJPAjxXuNFSEaksCJVd1M6DaKQViJBYPK2BdpDEP/';
 
-  // We get the contract to deploy
-  const Greeter = await hre.ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+  const [owner] = await hre.ethers.getSigners();
 
-  await greeter.deployed();
+  const NFTCollectible = await hre.ethers.getContractFactory('NFTCollectible');
+  const contract = await NFTCollectible.deploy(baseTokenURI);
 
-  console.log("Greeter deployed to:", greeter.address);
+  await contract.deployed();
+
+  console.log('NFTCollectible deployed to:', contract.address);
+
+  let txn = await contract.reserveNFTs();
+  await txn.wait();
+  console.log('10 NFTs have been reserved.');
+
+  txn = await contract.mintNFTs(3, { value: utils.parseEther('0.03') });
+  await txn.wait();
+
+  let tokens = await contract.tokensOfOwner(owner.address);
+  console.log('Owner has tokens: ', tokens);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
